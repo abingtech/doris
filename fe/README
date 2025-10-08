@@ -29,3 +29,13 @@ Depends: fe-common
 This module is the main process module of FE.
 Depends: fe-common, spark-dpp
 
+==========================
+# 打包命令
+mvn clean install -DskipTests -Dcheckstyle.skip=true
+
+# 环境变量
+DORIS_HOME=/Users/huangqibing/DorisDev/doris-run/fe;JAVA_OPTS=-Xmx8092m;LOG_DIR=/Users/huangqibing/DorisDev/doris-run/fe/log;PID_DIR=/Users/huangqibing/DorisDev/doris-run/fe/log
+
+# 配置
+将fe.conf拷贝到/Users/huangqibing/DorisDev/doris-run/fe/conf目录下
+
