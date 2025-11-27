@@ -102,8 +102,8 @@ public class SearchPredicate extends Predicate {
                     i, child.getClass().getSimpleName(), child.getType());
             if (child instanceof SlotRef) {
                 SlotRef slotRef = (SlotRef) child;
-                LOG.info("SearchPredicate.toThrift: SlotRef details - column={}, isAnalyzed={}",
-                        slotRef.getColumnName(), slotRef.isAnalyzed());
+                LOG.info("SearchPredicate.toThrift: SlotRef details - column={}",
+                        slotRef.getColumnName());
                 if (slotRef.isAnalyzed() && slotRef.getDesc() != null) {
                     LOG.info("SearchPredicate.toThrift: SlotRef analyzed - slotId={}",
                             slotRef.getSlotId());
@@ -146,7 +146,29 @@ public class SearchPredicate extends Predicate {
         for (int i = 0; i < qsPlan.fieldBindings.size(); i++) {
             SearchDslParser.QsFieldBinding binding = qsPlan.fieldBindings.get(i);
             TSearchFieldBinding thriftBinding = new TSearchFieldBinding();
-            thriftBinding.setFieldName(binding.fieldName);
+
+            String fieldPath = binding.fieldName;
+            thriftBinding.setFieldName(fieldPath);
+
+            // Check if this is a variant subcolumn (contains dot)
+            if (fieldPath.contains(".")) {
+                // Parse variant subcolumn path
+                int firstDotPos = fieldPath.indexOf('.');
+                String parentField = fieldPath.substring(0, firstDotPos);
+                String subcolumnPath = fieldPath.substring(firstDotPos + 1);
+
+                thriftBinding.setIsVariantSubcolumn(true);
+                thriftBinding.setParentFieldName(parentField);
+                thriftBinding.setSubcolumnPath(subcolumnPath);
+
+                LOG.info("buildThriftParam: variant subcolumn field='{}', parent='{}', subcolumn='{}'",
+                        fieldPath, parentField, subcolumnPath);
+            } else {
+                thriftBinding.setIsVariantSubcolumn(false);
+            }
+
+            // Set slot index - this is the index in the children array, not the slotId
+            thriftBinding.setSlotIndex(i);
 
             if (i < this.children.size() && this.children.get(i) instanceof SlotRef) {
                 SlotRef slotRef = (SlotRef) this.children.get(i);

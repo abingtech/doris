@@ -187,6 +187,12 @@ public:
         return _query_options.__isset.enable_force_spill && _query_options.enable_force_spill;
     }
     const TQueryOptions& query_options() const { return _query_options; }
+    bool should_be_shuffled_agg(int node_id) const {
+        return _query_options.__isset.shuffled_agg_ids &&
+               std::any_of(_query_options.shuffled_agg_ids.begin(),
+                           _query_options.shuffled_agg_ids.end(),
+                           [&](const int id) -> bool { return id == node_id; });
+    }
 
     // global runtime filter mgr, the runtime filter have remote target or
     // need local merge should regist here. before publish() or push_to_remote()
@@ -195,9 +201,9 @@ public:
 
     TUniqueId query_id() const { return _query_id; }
 
-    vectorized::SimplifiedScanScheduler* get_scan_scheduler() { return _scan_task_scheduler; }
+    vectorized::ScannerScheduler* get_scan_scheduler() { return _scan_task_scheduler; }
 
-    vectorized::SimplifiedScanScheduler* get_remote_scan_scheduler() {
+    vectorized::ScannerScheduler* get_remote_scan_scheduler() {
         return _remote_scan_task_scheduler;
     }
 
@@ -317,8 +323,8 @@ private:
     AtomicStatus _exec_status;
 
     doris::pipeline::TaskScheduler* _task_scheduler = nullptr;
-    vectorized::SimplifiedScanScheduler* _scan_task_scheduler = nullptr;
-    vectorized::SimplifiedScanScheduler* _remote_scan_task_scheduler = nullptr;
+    vectorized::ScannerScheduler* _scan_task_scheduler = nullptr;
+    vectorized::ScannerScheduler* _remote_scan_task_scheduler = nullptr;
     // This dependency indicates if the 2nd phase RPC received from FE.
     std::unique_ptr<pipeline::Dependency> _execution_dependency;
     // This dependency indicates if memory is sufficient to execute.
